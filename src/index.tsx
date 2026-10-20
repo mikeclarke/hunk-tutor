@@ -220,7 +220,7 @@ const TUTOR_LESSONS: readonly TutorLesson[] = [
       },
       {
         id: "sidebar",
-        commandId: "hunk.view.toggleSidebar",
+        commandId: "hunk.view.toggleFilesPane",
         label: "hide Tutor; it reopens at LESSON 4 START",
         targetPath: "04-find-a-file/needle.md",
         spotlight: "LESSON 4 START",
@@ -885,7 +885,11 @@ export default function registerTutor(hunk: HunkExtensionAPI) {
       completeTask("save-note", ctx);
     }
   });
-  hunk.on("changeset_loaded", ({ changeset }) => {
+  // Hunk may emit startup before or after the first changeset_loaded, so the
+  // welcome waits until both have happened and then runs once.
+  let started = false;
+  let welcomed = false;
+  hunk.on("changeset_loaded", ({ changeset }, ctx) => {
     tutorFileIds.clear();
     if (!isTutorChangeset(changeset)) {
       return;
@@ -893,11 +897,20 @@ export default function registerTutor(hunk: HunkExtensionAPI) {
     for (const file of changeset.files) {
       tutorFileIds.set(file.path, file.id);
     }
+    if (started) {
+      void welcome(ctx);
+    }
   });
   hunk.on("startup", async (_event, ctx) => {
-    if (tutorFileIds.size === 0) {
+    started = true;
+    await welcome(ctx);
+  });
+
+  async function welcome(ctx: ExtensionEventContext) {
+    if (welcomed || tutorFileIds.size === 0) {
       return;
     }
+    welcomed = true;
     ctx.panes.open("guide");
     navigateToLesson(TUTOR_LESSONS[0]!, ctx);
     await ctx.dialogs.confirm({
@@ -907,5 +920,5 @@ export default function registerTutor(hunk: HunkExtensionAPI) {
       cancelLabel: "skip intro",
     });
     ctx.notify("Lesson 1 is ready • follow START HERE");
-  });
+  }
 }

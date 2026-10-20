@@ -1,5 +1,5 @@
 import { isAbsolute, relative, resolve, sep } from "node:path";
-import { createTwoFilesPatch } from "diff";
+import { createTwoFilesPatch } from "../node_modules/diff/libesm/index.js";
 import type { ExtensionVcsDetection, ExtensionVcsPatchResult } from "hunkdiff/extension";
 import { getTutorDocumentText, TUTOR_DOCUMENTS } from "./content";
 
